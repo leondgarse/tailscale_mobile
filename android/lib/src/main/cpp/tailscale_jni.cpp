@@ -5,7 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "libtailscale_android_arm64.h"
+#include "libtailscale.h"
 
 #define TAG "TailscaleJNI"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,  TAG, __VA_ARGS__)

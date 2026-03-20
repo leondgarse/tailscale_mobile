@@ -72,7 +72,7 @@ GOOS=android GOARCH=amd64 CGO_ENABLED=1 CC=$NDK/x86_64-linux-android26-clang \
 cp libtailscale_arm64.so  ../android/lib/src/main/jniLibs/arm64-v8a/libtailscale.so
 cp libtailscale_armv7a.so ../android/lib/src/main/jniLibs/armeabi-v7a/libtailscale.so
 cp libtailscale_x86_64.so ../android/lib/src/main/jniLibs/x86_64/libtailscale.so
-cp libtailscale_arm64.h   ../android/lib/src/main/cpp/
+cp libtailscale_arm64.h   ../android/lib/src/main/cpp/libtailscale.h
 ```
 
 Prebuilt `.so` files (Tailscale v1.94.1) are attached to each GitHub release for all three ABIs.

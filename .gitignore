@@ -5,8 +5,13 @@ android/lib/build/
 android/sample/build/
 android/local.properties
 
-# Gradle wrapper jar (keep .properties)
-android/gradle/wrapper/gradle-wrapper.jar
+# android/ gradle files are duplicates of root — ignore to prevent re-adding
+android/build.gradle.kts
+android/settings.gradle.kts
+android/gradle.properties
+android/gradlew
+android/gradlew.bat
+android/gradle/
 
 # IDE
 .idea/
