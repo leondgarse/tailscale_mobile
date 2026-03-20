@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Tailscale Mobile Sample</string>
-    <string name="channel_name">Live Stream</string>
-    <string name="notif_streaming">Streaming over Tailscale…</string>
+    <string name="app_name">Tailscale RTMP Sample</string>
+    <string name="channel_name">RTMP Stream</string>
+    <string name="notif_streaming">Streaming RTMP over Tailscale…</string>
 </resources>

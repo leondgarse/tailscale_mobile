@@ -1,16 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sample: RTMP streaming over Tailscale.
+
+  Flow:
+    1. Enter Tailscale auth key, peer IP (100.x.y.z), and RTMP path.
+    2. Tap Start → requests Camera/Mic permissions → VPN permission → TailscaleProxyService starts.
+    3. Service connects to the tailnet and opens a local TCP proxy on 127.0.0.1:PORT.
+    4. Camera preview starts and GenericStream pushes RTMP to rtmp://127.0.0.1:PORT/<path>.
+    5. TailscaleProxyService tunnels each TCP connection to <peerIp>:1935 via WireGuard.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#000000">
 
+    <!-- Camera preview -->
     <TextureView
         android:id="@+id/texturePreview"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
 
+    <!-- Config + status panel -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -22,46 +34,81 @@
             android:orientation="vertical"
             android:padding="12dp">
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="RTMP over Tailscale"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginBottom="10dp" />
+
+            <!-- Tailscale auth key — from https://login.tailscale.com/admin/settings/keys -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tailscale auth key"
+                android:textColor="#AAAAAA"
+                android:textSize="11sp"
+                android:layout_marginBottom="2dp" />
             <EditText
                 android:id="@+id/etAuthKey"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Tailscale auth key (tskey-auth-…)"
+                android:hint="tskey-auth-…"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#888888"
+                android:textColorHint="#666666"
                 android:textSize="11sp"
                 android:inputType="textVisiblePassword"
                 android:background="#33FFFFFF"
                 android:padding="6dp"
-                android:layout_marginBottom="6dp" />
+                android:layout_marginBottom="8dp" />
 
+            <!-- Tailscale IP of the RTMP server peer (e.g. MediaMTX) -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="RTMP server Tailscale IP"
+                android:textColor="#AAAAAA"
+                android:textSize="11sp"
+                android:layout_marginBottom="2dp" />
             <EditText
                 android:id="@+id/etPeerIp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Peer Tailscale IP (100.x.y.z)"
+                android:hint="100.x.y.z"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#888888"
-                android:textSize="11sp"
-                android:inputType="text"
-                android:background="#33FFFFFF"
-                android:padding="6dp"
-                android:layout_marginBottom="6dp" />
-
-            <EditText
-                android:id="@+id/etStreamSuffix"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="RTMP path suffix"
-                android:text="/live/stream"
-                android:textColor="#FFFFFF"
-                android:textColorHint="#888888"
+                android:textColorHint="#666666"
                 android:textSize="11sp"
                 android:inputType="text"
                 android:background="#33FFFFFF"
                 android:padding="6dp"
                 android:layout_marginBottom="8dp" />
 
+            <!-- RTMP stream path on the server, e.g. /live/stream or /live/mykey -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="RTMP stream path  (rtmp://&lt;peer&gt;:1935&lt;path&gt;)"
+                android:textColor="#AAAAAA"
+                android:textSize="11sp"
+                android:layout_marginBottom="2dp" />
+            <EditText
+                android:id="@+id/etStreamSuffix"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="/live/stream"
+                android:text="/live/stream"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#666666"
+                android:textSize="11sp"
+                android:inputType="text"
+                android:background="#33FFFFFF"
+                android:padding="6dp"
+                android:layout_marginBottom="10dp" />
+
+            <!-- Status line: shows Tailscale connection progress then streaming state -->
             <TextView
                 android:id="@+id/tvStatus"
                 android:layout_width="match_parent"
@@ -69,27 +116,27 @@
                 android:text="Idle"
                 android:textColor="#FFFFFF"
                 android:textSize="13sp"
-                android:gravity="center" />
+                android:gravity="center"
+                android:layout_marginBottom="8dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginTop="8dp">
+                android:gravity="center">
 
                 <Button
                     android:id="@+id/btnStart"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Start"
+                    android:text="Start Stream"
                     android:layout_marginEnd="12dp" />
 
                 <Button
                     android:id="@+id/btnStop"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Stop"
+                    android:text="Stop Stream"
                     android:visibility="gone" />
 
             </LinearLayout>

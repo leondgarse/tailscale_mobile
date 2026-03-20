@@ -115,11 +115,41 @@ android/
         TailscaleJni.kt          Kotlin JNI declarations
         TailscaleProxyService.kt Tailscale lifecycle + local TCP proxy
 
-  sample/                   ← Sample app — RTMP streaming over Tailscale
+  sample/                   ← Sample app: RTMP camera streaming over Tailscale
     src/main/java/com/tailscale/mobile/sample/
-      MainActivity.kt       Config UI → TailscaleProxyService → GenericStream (RTMP)
-      StreamService.kt      Foreground service (screen-off keepalive)
+      MainActivity.kt       Config UI (auth key, peer IP, RTMP path) →
+                            permissions → VPN → TailscaleProxyService →
+                            GenericStream pushes rtmp://127.0.0.1:PORT/path
+      StreamService.kt      Foreground service (keeps stream alive when screen is off)
 ```
+
+### Sample app: RTMP streaming
+
+The sample demonstrates streaming live camera video to a private [MediaMTX](https://github.com/bluenviron/mediamtx) (or any RTMP server) on a Tailscale network:
+
+```
+Camera (Camera2Source)
+    │ H.264 + AAC
+    ▼
+GenericStream (RootEncoder)
+    │ RTMP → rtmp://127.0.0.1:PORT/live/stream
+    ▼
+TailscaleProxyService  (local TCP proxy)
+    │ TsnetDial → 100.x.y.z:1935  (WireGuard tunnel)
+    ▼
+MediaMTX on peer  (rtmp://100.x.y.z:1935/live/stream)
+```
+
+**What you need on the server side:**
+- A machine on your Tailscale network running MediaMTX (or another RTMP server on port 1935)
+- Its Tailscale IP (`100.x.y.z`) — no port forwarding, no public IP required
+
+**What the sample app does:**
+1. Requests Camera + Microphone permissions
+2. Requests VPN permission (one-time system dialog; no TUN device is created)
+3. Starts `TailscaleProxyService` — connects to tailnet, opens `ServerSocket` on `127.0.0.1:PORT`
+4. Waits until `TailscaleProxyService.isReady` (~4–8 s with cached auth state)
+5. Starts camera preview and streams RTMP to `127.0.0.1:PORT` — tunnelled to the peer
 
 ### Using the library (JitPack)
 

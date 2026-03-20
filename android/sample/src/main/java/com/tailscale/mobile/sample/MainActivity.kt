@@ -1,3 +1,24 @@
+/**
+ * Sample: RTMP streaming over Tailscale.
+ *
+ * This sample shows how to use TailscaleProxyService to stream camera video via RTMP
+ * to a private server (e.g. MediaMTX) on a Tailscale network — without installing
+ * the Tailscale app on the device.
+ *
+ * Full flow:
+ *   1. User enters: Tailscale auth key, RTMP server peer IP (100.x.y.z), RTMP path.
+ *   2. Camera + Mic permissions are requested.
+ *   3. VPN permission is requested (required for NETLINK_ROUTE; no TUN device is created).
+ *   4. TailscaleProxyService.start() — connects to tailnet, opens ServerSocket on 127.0.0.1:PORT.
+ *   5. Poll TailscaleProxyService.isReady until the proxy is listening (~4–8s).
+ *   6. GenericStream (RootEncoder) pushes RTMP to rtmp://127.0.0.1:PORT/<path>.
+ *   7. TailscaleProxyService pipes each TCP connection → TsnetDial → peerIp:1935 via WireGuard.
+ *
+ * The RTMP server only needs to be reachable on its Tailscale IP — no port forwarding required.
+ *
+ * Dependencies (android/sample/build.gradle.kts):
+ *   implementation("com.github.pedroSG94.RootEncoder:library:2.6.7")  // GenericStream, Camera2Source
+ */
 package com.tailscale.mobile.sample
 
 import android.Manifest

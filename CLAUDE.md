@@ -34,7 +34,7 @@ jitpack.yml         JitPack build config — downloads prebuilt .so from GitHub 
 | `android/lib/.../TailscaleConfig.kt` | `Serializable` data class: `authKey`, `peerIp`, `peerPort`, `hostname` |
 | `android/lib/.../TailscaleJni.kt` | Kotlin `external fun` declarations loading `libtailscale_jni.so` |
 | `android/lib/.../TailscaleProxyService.kt` | Tailscale lifecycle + local TCP proxy `ServerSocket` accept loop; extends `VpnService` |
-| `android/sample/.../MainActivity.kt` | Config UI → `TailscaleProxyService` → `GenericStream` (RTMP sample) |
+| `android/sample/.../MainActivity.kt` | RTMP sample: config UI (auth key, peer IP, RTMP path) → permissions → VPN → `TailscaleProxyService` → `GenericStream` pushes `rtmp://127.0.0.1:PORT/path` |
 | `android/sample/.../StreamService.kt` | Foreground service keeping WiFi/CPU alive when screen is off |
 | `android/lib/src/main/cpp/tailscale_jni.cpp` | JNI C++ bridge: `connect`, `getIp`, `dial`, `closeFd`, `close` |
 
