@@ -1,73 +1,95 @@
 # CLAUDE.md — tailscale_mobile
 
-Standalone Android library/app demonstrating in-process Tailscale networking via `libtailscale`
-(Go `c-shared`). No Tailscale app required on device.
+Reusable Android library for in-process Tailscale networking. No Tailscale app required on device.
+Published to JitPack as `com.github.leondgarse:tailscale_mobile`.
 
 ## What this does
 
-Streams camera video over RTMP to a peer on the Tailscale network without routing through the OS
-network stack. Key trick: `TailscaleVpnService` opens a `ServerSocket` on `127.0.0.1:PORT` and
-pipes each incoming connection to a `TsnetDial` file descriptor — bridging `GenericStream`'s raw
-TCP into the Tailscale userspace WireGuard tunnel.
+Provides a local TCP proxy (`127.0.0.1:PORT`) that tunnels any TCP connection to a peer on the
+Tailscale network using userspace WireGuard. Any TCP client (RTMP, HTTP, custom protocols) connects
+to `127.0.0.1:proxyPort` instead of the peer IP directly.
 
-## Configuration
+Key trick: `TailscaleProxyService` opens a `ServerSocket` on `127.0.0.1` and pipes each incoming
+connection to a `TsnetDial` file descriptor — bridging Android's TCP socket APIs into the Tailscale
+userspace WireGuard tunnel. `VpnService` is held (without creating a TUN device) purely to gain
+`NETLINK_ROUTE` permission, which Android SELinux blocks for untrusted apps.
 
-All three settings are entered in the app UI at runtime — no rebuild needed:
+## Repository structure
 
-| Field | Default | Description |
-|---|---|---|
-| Auth key | *(empty)* | `tskey-auth-…` from Tailscale admin |
-| Server Tailscale IP | *(empty)* | `100.x.y.z` of your RTMP server on the tailnet |
-| Stream path suffix | `/live/stream` | RTMP path after the host, e.g. `/live/mystream` |
-
-Values are stored in `TailscaleManager` at startup and read by `TailscaleVpnService`/`MainActivity`.
-The server port is hardcoded to `1935` in `TailscaleManager.serverPort` — change it there if needed.
-
-## Build
-
-```bash
-cd android
-./gradlew :app:assembleDebug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
-
-> JDK: set `JAVA_HOME` in `~/.bashrc` before building. Do not override inline.
-
-## Rebuild libtailscale .so (arm64)
-
-Only needed if modifying `libtailscale/` Go source. Requires Go + Android NDK.
-
-```bash
-cd libtailscale
-
-NDK=$ANDROID_HOME/ndk/<version>/toolchains/llvm/prebuilt/linux-x86_64/bin
-CC=$NDK/aarch64-linux-android26-clang
-
-GOOS=android GOARCH=arm64 CGO_ENABLED=1 CC=$CC \
-  go build -buildmode=c-shared -tags android \
-  -o libtailscale_android_arm64.so .
-
-cp libtailscale_android_arm64.so ../android/app/src/main/jniLibs/arm64-v8a/libtailscale.so
-cp libtailscale_android_arm64.h  ../android/app/src/main/cpp/
+libtailscale/       Go source → c-shared .so (fork of tailscale/libtailscale + Android additions)
+android/
+  lib/              Android library module (AAR) — com.tailscale.mobile
+  sample/           Sample app — RTMP streaming over Tailscale
+settings.gradle.kts  Root Gradle entry point (required for JitPack discovery)
+jitpack.yml         JitPack build config — downloads prebuilt .so from GitHub Release assets
 ```
 
 ## Module map
 
 | File | Purpose |
 |---|---|
-| `libtailscale/tailscale.go` | Go C API: `TsnetNewServer`, `TsnetLoopback`, `TsnetDial`, `TsnetGetIps`, `TsnetErrmsg`, `TsnetClose`, `TsnetSet*` |
+| `libtailscale/tailscale.go` | Go C API: `TsnetNewServer`, `TsnetDial`, `TsnetListen`, `TsnetGetIps`, `TsnetErrmsg`, `TsnetClose`, `TsnetSet*` |
 | `libtailscale/android_init.go` | `TsnetSetAndroidDirs` (env vars for logpolicy) + fake `android0` interface so `netmon` reports `v4=true` |
-| `android/.../TailscaleJni.kt` | Kotlin `external fun` declarations loading `libtailscale_jni.so` |
-| `android/.../TailscaleVpnService.kt` | Tailscale lifecycle (connect → auth poll → proxy ServerSocket accept loop); extends `VpnService` for `NETLINK_ROUTE` permission |
-| `android/.../TailscaleManager.kt` | Auth key + lazy `TAILSCALE_RTMP_URL` reading `proxyPort` |
-| `android/.../MainActivity.kt` | Camera2 → `GenericStream` → `rtmp://127.0.0.1:proxyPort/...`; polls `TailscaleVpnService.isConnected` |
-| `android/.../StreamService.kt` | Foreground service keeping WiFi/CPU alive when screen is off |
-| `android/.../cpp/tailscale_jni.cpp` | JNI C++ bridge: `connect`, `getIp`, `dial`, `closeFd`, `close` |
+| `android/lib/.../TailscaleConfig.kt` | `Serializable` data class: `authKey`, `peerIp`, `peerPort`, `hostname` |
+| `android/lib/.../TailscaleJni.kt` | Kotlin `external fun` declarations loading `libtailscale_jni.so` |
+| `android/lib/.../TailscaleProxyService.kt` | Tailscale lifecycle + local TCP proxy `ServerSocket` accept loop; extends `VpnService` |
+| `android/sample/.../MainActivity.kt` | Config UI → `TailscaleProxyService` → `GenericStream` (RTMP sample) |
+| `android/sample/.../StreamService.kt` | Foreground service keeping WiFi/CPU alive when screen is off |
+| `android/lib/src/main/cpp/tailscale_jni.cpp` | JNI C++ bridge: `connect`, `getIp`, `dial`, `closeFd`, `close` |
+
+## Build
+
+```bash
+# Build sample APK
+cd android
+./gradlew :sample:assembleDebug
+adb install -r sample/build/outputs/apk/debug/sample-debug.apk
+```
+
+> JDK: set `JAVA_HOME` in `~/.bashrc` before building. Do not override inline.
+
+## Rebuild libtailscale .so (all ABIs)
+
+Only needed if modifying `libtailscale/` Go source. Go is at `/opt/go/bin/go`.
+
+```bash
+NDK=~/Android/Sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin
+cd libtailscale
+
+GOOS=android GOARCH=arm64 CGO_ENABLED=1 CC=$NDK/aarch64-linux-android26-clang \
+  /opt/go/bin/go build -buildmode=c-shared -tags android -o libtailscale_arm64.so .
+
+GOOS=android GOARCH=arm GOARM=7 CGO_ENABLED=1 CC=$NDK/armv7a-linux-androideabi24-clang \
+  /opt/go/bin/go build -buildmode=c-shared -tags android -o libtailscale_armv7a.so .
+
+GOOS=android GOARCH=amd64 CGO_ENABLED=1 CC=$NDK/x86_64-linux-android26-clang \
+  /opt/go/bin/go build -buildmode=c-shared -tags android -o libtailscale_x86_64.so .
+
+cp libtailscale_arm64.so  ../android/lib/src/main/jniLibs/arm64-v8a/libtailscale.so
+cp libtailscale_armv7a.so ../android/lib/src/main/jniLibs/armeabi-v7a/libtailscale.so
+cp libtailscale_x86_64.so ../android/lib/src/main/jniLibs/x86_64/libtailscale.so
+```
+
+## Releasing
+
+1. Commit and push changes
+2. Create a GitHub Release with all three `.so` files attached:
+   ```bash
+   git tag v1.x.y && git push origin v1.x.y
+   gh release create v1.x.y \
+     libtailscale/libtailscale_arm64.so \
+     libtailscale/libtailscale_armv7a.so \
+     libtailscale/libtailscale_x86_64.so \
+     --title "v1.x.y" --repo leondgarse/tailscale_mobile
+   ```
+3. Trigger JitPack at https://jitpack.io/#leondgarse/tailscale_mobile
 
 ## Known gotchas
 
 - `InetAddress.getLoopbackAddress()` returns `::1` (IPv6) on some devices — always use `InetAddress.getByName("127.0.0.1")` for the `ServerSocket`.
-- `TsnetLoopback` returns immediately before auth completes. Auth detection is done by polling `TsnetGetIps()` until a `100.x.y.z` address appears (~4s with cached state, up to 90s cold).
+- `TsnetLoopback` returns before auth completes. Auth is detected by polling `TsnetGetIps()` until a `100.x.y.z` address appears (~4s cached, up to 90s cold start).
 - The `VpnService` permission dialog appears once per install; subsequent launches skip it if already granted.
-- Auth key is hardcoded — rotate in `TailscaleManager.kt` before expiry. Use ephemeral keys (set in `TsnetSetEphemeral`) so devices auto-expire from the tailnet.
-- `tsnet_debug.log` written to `filesDir` — useful for diagnosing auth failures. Remove `TsnetSetLogFD` call in `tailscale_jni.cpp` for production.
+- Use ephemeral auth keys (`TsnetSetEphemeral`) so devices auto-expire from the tailnet.
+- `tsnet_debug.log` is written to `filesDir` — useful for diagnosing auth failures. Remove `TsnetSetLogFD` in `tailscale_jni.cpp` for production.
+- The `.so` files are not stored in git — they are downloaded from GitHub Release assets by `jitpack.yml` at build time.

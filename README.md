@@ -23,7 +23,7 @@ A fork of [`tailscale/libtailscale`](https://github.com/tailscale/libtailscale) 
   conn, err := s.Dial(context.Background(), "tcp", "100.x.y.z:1935")
   // conn is a net.Conn — use it directly
   ```
-- **arm64 only** (prebuilt). Rebuild from source for other ABIs.
+- **arm64, armeabi-v7a, x86_64** prebuilts included. Rebuild from source for other ABIs (e.g. x86 32-bit).
 - **TCP only** in the Android proxy layer. The C API itself supports UDP via `tailscale_dial`/`tailscale_listen`, but the Android `TailscaleProxyService` only proxies TCP.
 
 ### Android-specific additions over upstream
@@ -49,25 +49,34 @@ A fork of [`tailscale/libtailscale`](https://github.com/tailscale/libtailscale) 
 
 All connections are plain Unix file descriptors — use `read(2)`, `write(2)`, `close(2)` directly.
 
-### Building for Android (arm64)
+### Building for Android
 
 Only needed if modifying Go source. Requires Go 1.21+ and Android NDK r25+.
 
 ```bash
+NDK=$ANDROID_HOME/ndk/<version>/toolchains/llvm/prebuilt/linux-x86_64/bin
 cd libtailscale
 
-NDK=$ANDROID_HOME/ndk/<version>/toolchains/llvm/prebuilt/linux-x86_64/bin
-CC=$NDK/aarch64-linux-android26-clang
+# arm64-v8a (physical devices)
+GOOS=android GOARCH=arm64 CGO_ENABLED=1 CC=$NDK/aarch64-linux-android26-clang \
+  go build -buildmode=c-shared -tags android -o libtailscale_arm64.so .
 
-GOOS=android GOARCH=arm64 CGO_ENABLED=1 CC=$CC \
-  go build -buildmode=c-shared -tags android \
-  -o libtailscale_android_arm64.so .
+# armeabi-v7a (older 32-bit ARM devices)
+GOOS=android GOARCH=arm GOARM=7 CGO_ENABLED=1 CC=$NDK/armv7a-linux-androideabi24-clang \
+  go build -buildmode=c-shared -tags android -o libtailscale_armv7a.so .
 
-cp libtailscale_android_arm64.so ../android/lib/src/main/jniLibs/arm64-v8a/libtailscale.so
-cp libtailscale_android_arm64.h  ../android/lib/src/main/cpp/
+# x86_64 (emulators)
+GOOS=android GOARCH=amd64 CGO_ENABLED=1 CC=$NDK/x86_64-linux-android26-clang \
+  go build -buildmode=c-shared -tags android -o libtailscale_x86_64.so .
+
+cp libtailscale_arm64.so  ../android/lib/src/main/jniLibs/arm64-v8a/libtailscale.so
+cp libtailscale_armv7a.so ../android/lib/src/main/jniLibs/armeabi-v7a/libtailscale.so
+cp libtailscale_x86_64.so ../android/lib/src/main/jniLibs/x86_64/libtailscale.so
+cp libtailscale_arm64.h   ../android/lib/src/main/cpp/
 ```
 
-A prebuilt `.so` (Tailscale v1.94.1, arm64) is included at `android/lib/src/main/jniLibs/arm64-v8a/libtailscale.so`.
+Prebuilt `.so` files (Tailscale v1.94.1) are attached to each GitHub release for all three ABIs.
+They are **not stored in git** — downloaded by JitPack at build time via `jitpack.yml`.
 
 ---
 
@@ -198,13 +207,15 @@ git push -u origin main
 Using the GitHub CLI:
 ```bash
 gh release create v1.0.0 \
-  android/lib/src/main/jniLibs/arm64-v8a/libtailscale.so \
+  libtailscale/libtailscale_arm64.so \
+  libtailscale/libtailscale_armv7a.so \
+  libtailscale/libtailscale_x86_64.so \
   --title "v1.0.0" \
-  --notes "Initial release. Tailscale v1.94.1, arm64." \
+  --notes "Initial release. Tailscale v1.94.1." \
   --repo leondgarse/tailscale_mobile
 ```
 
-Or via the GitHub web UI: go to **Releases → Draft a new release**, tag `v1.0.0`, and upload `libtailscale.so`.
+Or via the GitHub web UI: go to **Releases → Draft a new release**, tag `v1.0.0`, and upload all three `.so` files.
 
 The release tag (`v1.0.0`) must match what JitPack passes as `${VERSION}` in `jitpack.yml`.
 
@@ -218,11 +229,13 @@ If the build fails, check the log at `https://jitpack.io/#leondgarse/tailscale_m
 
 1. Build the new `.so` (see [Building for Android](#building-for-android-arm64) above)
 2. Update `version` in `android/lib/build.gradle.kts`
-3. Create a new GitHub Release with the updated `.so`:
+3. Create a new GitHub Release with all three updated `.so` files:
    ```bash
    gh release create v1.1.0 \
-     /path/to/new/libtailscale.so \
-     --title "v1.1.0"
+     libtailscale/libtailscale_arm64.so \
+     libtailscale/libtailscale_armv7a.so \
+     libtailscale/libtailscale_x86_64.so \
+     --title "v1.1.0" --repo leondgarse/tailscale_mobile
    ```
 4. Trigger JitPack for the new tag
 
