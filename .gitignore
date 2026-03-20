@@ -19,3 +19,5 @@ libtailscale/*.h
 
 # Prebuilt .so — attached as GitHub Release asset, downloaded by jitpack.yml
 android/lib/src/main/jniLibs/
+android/gradle/wrapper/gradle-wrapper.jar
+gradle/wrapper/gradle-wrapper.jar
