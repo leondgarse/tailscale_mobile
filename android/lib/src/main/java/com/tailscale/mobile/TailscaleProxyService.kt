@@ -17,7 +17,7 @@ import java.net.Socket
 /**
  * Embeds Tailscale in-process and exposes a local TCP proxy port.
  *
- * Why VpnService: Android SELinux blocks /proc/net/* for untrusted apps, preventing Tailscale's
+ * Why VpnService: Android SELinux blocks /proc/net/ for untrusted apps, preventing Tailscale's
  * netmon from enumerating interfaces (v4=false → control client paused → auth never completes).
  * VpnService grants NETLINK_ROUTE permission which unblocks this. We never call Builder.establish()
  * — no TUN device is created.
