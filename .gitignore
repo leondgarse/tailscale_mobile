@@ -1,0 +1,21 @@
+# Android build outputs
+android/.gradle/
+android/build/
+android/lib/build/
+android/sample/build/
+android/local.properties
+
+# Gradle wrapper jar (keep .properties)
+android/gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+
+# libtailscale build outputs (keep source)
+libtailscale/*.so
+libtailscale/*.h
+
+# Prebuilt .so — attached as GitHub Release asset, downloaded by jitpack.yml
+android/lib/src/main/jniLibs/

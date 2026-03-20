@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#000000">
+
+    <TextureView
+        android:id="@+id/texturePreview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#CC000000">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <EditText
+                android:id="@+id/etAuthKey"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Tailscale auth key (tskey-auth-…)"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#888888"
+                android:textSize="11sp"
+                android:inputType="textVisiblePassword"
+                android:background="#33FFFFFF"
+                android:padding="6dp"
+                android:layout_marginBottom="6dp" />
+
+            <EditText
+                android:id="@+id/etPeerIp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Peer Tailscale IP (100.x.y.z)"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#888888"
+                android:textSize="11sp"
+                android:inputType="text"
+                android:background="#33FFFFFF"
+                android:padding="6dp"
+                android:layout_marginBottom="6dp" />
+
+            <EditText
+                android:id="@+id/etStreamSuffix"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="RTMP path suffix"
+                android:text="/live/stream"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#888888"
+                android:textSize="11sp"
+                android:inputType="text"
+                android:background="#33FFFFFF"
+                android:padding="6dp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Idle"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:gravity="center" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="8dp">
+
+                <Button
+                    android:id="@+id/btnStart"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Start"
+                    android:layout_marginEnd="12dp" />
+
+                <Button
+                    android:id="@+id/btnStop"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Stop"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>
