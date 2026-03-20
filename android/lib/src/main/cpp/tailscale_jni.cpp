@@ -4,7 +4,6 @@
 #include <android/log.h>
 #include <string.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include "libtailscale.h"
 
 #define TAG "TailscaleJNI"
@@ -45,17 +44,7 @@ Java_com_tailscale_mobile_TailscaleJni_connect(
     TsnetSetAuthKey(ts_handle,  const_cast<char*>(auth_key));
     TsnetSetHostname(ts_handle, const_cast<char*>(hostname));
     TsnetSetEphemeral(ts_handle, 1);
-
-    // Write Tailscale logs to a file so we can inspect auth issues
-    char logpath[512];
-    snprintf(logpath, sizeof(logpath), "%s/tsnet_debug.log", state_dir);
-    int logfd = open(logpath, O_WRONLY | O_CREAT | O_APPEND, 0644);
-    if (logfd >= 0) {
-        LOGI("Tailscale debug log → %s", logpath);
-        TsnetSetLogFD(ts_handle, logfd);
-    } else {
-        TsnetSetLogFD(ts_handle, -1);
-    }
+    TsnetSetLogFD(ts_handle, -1);  // discard logs in production
 
     env->ReleaseStringUTFChars(j_state_dir, state_dir);
     env->ReleaseStringUTFChars(j_auth_key,  auth_key);

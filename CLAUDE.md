@@ -92,5 +92,5 @@ cp libtailscale_arm64.h   ../android/lib/src/main/cpp/libtailscale.h
 - `TsnetLoopback` returns before auth completes. Auth is detected by polling `TsnetGetIps()` until a `100.x.y.z` address appears (~4s cached, up to 90s cold start).
 - The `VpnService` permission dialog appears once per install; subsequent launches skip it if already granted.
 - Use ephemeral auth keys (`TsnetSetEphemeral`) so devices auto-expire from the tailnet.
-- `tsnet_debug.log` is written to `filesDir` — useful for diagnosing auth failures. Remove `TsnetSetLogFD` in `tailscale_jni.cpp` for production.
+- Tailscale logs are discarded in production (`TsnetSetLogFD(ts_handle, -1)`). To debug auth failures, temporarily change `-1` to a real fd: `open("<filesDir>/tsnet_debug.log", O_WRONLY|O_CREAT|O_APPEND, 0644)`.
 - The `.so` files are not stored in git — they are downloaded from GitHub Release assets by `jitpack.yml` at build time.
