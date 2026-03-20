@@ -198,13 +198,13 @@ git push -u origin main
 Using the GitHub CLI:
 ```bash
 gh release create v1.0.0 \
-  android/lib/src/main/jniLibs/arm64-v8a/libtailscale.so#libtailscale_android_arm64.so \
+  android/lib/src/main/jniLibs/arm64-v8a/libtailscale.so \
   --title "v1.0.0" \
   --notes "Initial release. Tailscale v1.94.1, arm64." \
   --repo leondgarse/tailscale_mobile
 ```
 
-Or via the GitHub web UI: go to **Releases → Draft a new release**, tag `v1.0.0`, and upload `libtailscale.so` renamed to `libtailscale_android_arm64.so`.
+Or via the GitHub web UI: go to **Releases → Draft a new release**, tag `v1.0.0`, and upload `libtailscale.so`.
 
 The release tag (`v1.0.0`) must match what JitPack passes as `${VERSION}` in `jitpack.yml`.
 
@@ -221,7 +221,7 @@ If the build fails, check the log at `https://jitpack.io/#leondgarse/tailscale_m
 3. Create a new GitHub Release with the updated `.so`:
    ```bash
    gh release create v1.1.0 \
-     /path/to/new/libtailscale_android_arm64.so \
+     /path/to/new/libtailscale.so \
      --title "v1.1.0"
    ```
 4. Trigger JitPack for the new tag
