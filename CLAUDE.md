@@ -41,10 +41,9 @@ jitpack.yml         JitPack build config — downloads prebuilt .so from GitHub 
 ## Build
 
 ```bash
-# Build sample APK
-cd android
+# Build sample APK (run from repo root)
 ./gradlew :sample:assembleDebug
-adb install -r sample/build/outputs/apk/debug/sample-debug.apk
+adb install -r android/sample/build/outputs/apk/debug/sample-debug.apk
 ```
 
 > JDK: set `JAVA_HOME` in `~/.bashrc` before building. Do not override inline.

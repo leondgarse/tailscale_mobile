@@ -208,9 +208,8 @@ TailscaleProxyService.stop(this)
 ### Build the sample APK
 
 ```bash
-cd android
 ./gradlew :sample:assembleDebug
-adb install -r sample/build/outputs/apk/debug/sample-debug.apk
+adb install -r android/sample/build/outputs/apk/debug/sample-debug.apk
 ```
 
 ---
