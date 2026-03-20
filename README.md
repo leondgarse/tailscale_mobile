@@ -2,7 +2,6 @@
 
 Embed Tailscale in-process on Android — no Tailscale app required on device.
 
-![Sample app — RTMP streaming live over Tailscale](sample.jpg)
 
 The library provides a local TCP proxy (`127.0.0.1:PORT`) that tunnels any TCP connection to a peer on your tailnet using userspace WireGuard. Any Android TCP client (RTMP, HTTP, custom protocols, databases) can reach private Tailscale peers by connecting to the local proxy address instead of the peer IP directly.
 
@@ -152,6 +151,8 @@ MediaMTX on peer  (rtmp://100.x.y.z:1935/live/stream)
 3. Starts `TailscaleProxyService` — connects to tailnet, opens `ServerSocket` on `127.0.0.1:PORT`
 4. Waits until `TailscaleProxyService.isReady` (~4–8 s with cached auth state)
 5. Starts camera preview and streams RTMP to `127.0.0.1:PORT` — tunnelled to the peer
+
+<img src="sample.jpg" width="300" alt="Sample app — RTMP streaming live over Tailscale" />
 
 ### Using the library (JitPack)
 
