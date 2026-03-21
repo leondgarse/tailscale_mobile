@@ -42,7 +42,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId    = "com.github.leondgarse"
                 artifactId = "tailscale_mobile"
-                version    = "1.0.0"
+                version    = "1.0.4"
             }
         }
     }
