@@ -40,9 +40,11 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import android.media.MediaRecorder
 import com.pedro.common.ConnectChecker
 import com.pedro.encoder.input.sources.audio.MicrophoneSource
 import com.pedro.encoder.input.sources.video.Camera2Source
+import com.pedro.encoder.utils.CodecUtil
 import com.pedro.library.generic.GenericStream
 import com.tailscale.mobile.TailscaleConfig
 import com.tailscale.mobile.TailscaleProxyService
@@ -177,7 +179,12 @@ class MainActivity : AppCompatActivity(), ConnectChecker {
         val isPortrait = resources.displayMetrics.let { it.heightPixels > it.widthPixels }
         val w = if (isPortrait) 1080 else 1920
         val h = if (isPortrait) 1920 else 1080
-        val s = GenericStream(this, this, Camera2Source(this), MicrophoneSource())
+        val s = GenericStream(this, this, Camera2Source(this),
+            MicrophoneSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION))
+        // Force software AAC encoder: Qualcomm HW AAC encoder (c2.qti.aac.hw.encoder) on Snapdragon
+        // devices takes ~60s to produce its first frame — outside gortmplib's 2s readTracks window,
+        // causing MediaMTX to see only 1 track (H264) and eventually disconnect.
+        s.forceCodecType(CodecUtil.CodecType.FIRST_COMPATIBLE_FOUND, CodecUtil.CodecType.SOFTWARE)
         if (!s.prepareVideo(w, h, 30, 8_000_000) || !s.prepareAudio(44100, true, 128_000)) {
             s.release(); setStatus("Encoder prepare failed"); btnStart.isEnabled = true; return
         }

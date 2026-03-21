@@ -141,9 +141,26 @@ TailscaleProxyService  (local TCP proxy)
 MediaMTX on peer  (rtmp://100.x.y.z:1935/live/stream)
 ```
 
+**Latency vs bitrate** — the proxy buffer size in `TailscaleProxyService` directly determines end-to-end lag. Keep bitrate low enough that `bufferBytes / bitrateBytesPerSec < ~20ms`:
+
+| Resolution | FPS | Bitrate | Proxy lag |
+|---|---|---|---|
+| 1280×720 | 15 | 2 Mbps | ~1s ✅ |
+| 1920×1080 | 15 | 2 Mbps | ~4s |
+| 1920×1080 | 30 | 8 Mbps | ~20s ✗ |
+
 **What you need on the server side:**
 - A machine on your Tailscale network running MediaMTX (or another RTMP server on port 1935)
 - Its Tailscale IP (`100.x.y.z`) — no port forwarding, no public IP required
+- **Pin MediaMTX to v1.16.x** (`bluenviron/mediamtx:1.16.3-ffmpeg`): v1.17.0 adds stricter RTMP message-type validation that rejects a type sent by RootEncoder 2.6.7, causing ~34s disconnects
+- **mediamtx.yml** — two settings required for reliable operation via the Tailscale proxy:
+  ```yaml
+  # Default 10s read timeout fires during WireGuard handshake latency on first RTMP connect
+  readTimeout: 30s
+  # Paths must be explicitly declared in MediaMTX 1.16.x
+  paths:
+    live/stream:
+  ```
 
 **What the sample app does:**
 1. Requests Camera + Microphone permissions

@@ -171,15 +171,17 @@ class TailscaleProxyService : VpnService() {
         val tsOut = ParcelFileDescriptor.AutoCloseOutputStream(pfd)
         val clientIn  = client.getInputStream()
         val clientOut = client.getOutputStream()
-        val buf = ByteArray(65536)
+        // Separate buffers per direction to avoid data race; 4KB keeps proxy latency low
+        val bufUp   = ByteArray(4096)  // client → Tailscale
+        val bufDown = ByteArray(4096)  // Tailscale → client
 
         val t1 = Thread {
-            try { while (true) { val n = clientIn.read(buf); if (n < 0) break; tsOut.write(buf, 0, n) } }
+            try { while (true) { val n = clientIn.read(bufUp); if (n < 0) break; tsOut.write(bufUp, 0, n) } }
             catch (_: Exception) {}
             finally { client.runCatching { close() }; pfd.runCatching { close() }; proxyFd = -1 }
         }.also { it.isDaemon = true; it.start() }
 
-        try { while (true) { val n = tsIn.read(buf); if (n < 0) break; clientOut.write(buf, 0, n) } }
+        try { while (true) { val n = tsIn.read(bufDown); if (n < 0) break; clientOut.write(bufDown, 0, n) } }
         catch (_: Exception) {}
         finally { client.runCatching { close() }; t1.interrupt() }
 
