@@ -1,0 +1,31 @@
+name: Trigger JitPack build
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger JitPack
+        run: |
+          VERSION=${GITHUB_REF_NAME}
+          echo "Triggering JitPack build for $VERSION"
+          curl -s "https://jitpack.io/com/github/leondgarse/tailscale_mobile/${VERSION}/build.log" || true
+          # Poll until build completes (max 10 minutes)
+          for i in $(seq 1 20); do
+            sleep 30
+            STATUS=$(curl -s "https://jitpack.io/api/builds/com.github.leondgarse/tailscale_mobile/${VERSION}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('status','unknown'))" 2>/dev/null || echo "unknown")
+            echo "Attempt $i: status=$STATUS"
+            if [ "$STATUS" = "ok" ]; then
+              echo "JitPack build succeeded"
+              exit 0
+            elif [ "$STATUS" = "error" ]; then
+              echo "JitPack build failed — check https://jitpack.io/#leondgarse/tailscale_mobile/${VERSION}"
+              exit 1
+            fi
+          done
+          echo "JitPack build timed out — check https://jitpack.io/#leondgarse/tailscale_mobile/${VERSION}"
+          exit 1
